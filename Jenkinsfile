@@ -40,12 +40,23 @@ pipeline {
         }
         stage('Deploy to Kubernetes') {
             steps {
-                sh """
+                sh '''
+                kubectl config set-cluster jenkins-k8s \
+                --server=http://172.17.0.1:8001
+
+                kubectl config set-credentials jenkins
+
+                kubectl config set-context jenkins-k8s \
+                --cluster=jenkins-k8s \
+                --user=jenkins
+
+                kubectl config use-context jenkins-k8s
+
                 kubectl set image deployment/python-flask-cicd \
                 python-flask-cicd=yuki982/python-flask-cicd:${BUILD_NUMBER}
-                """
 
-                sh 'kubectl rollout status deployment/python-flask-cicd --timeout=120s'
+                kubectl rollout status deployment/python-flask-cicd --timeout=120s
+            '''
             }
         }
     }
