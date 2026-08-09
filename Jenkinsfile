@@ -35,10 +35,12 @@ pipeline {
                 sh "docker push yuki982/python-flask-cicd:${BUILD_NUMBER}"
             }
         }
+    }
         post {
             always {
                 sh "docker stop python-flask-test || true"
                 sh "docker rm python-flask-test || true"
             }
         }
-    }
+}
+  
