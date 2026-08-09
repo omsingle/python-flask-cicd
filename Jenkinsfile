@@ -17,6 +17,7 @@ pipeline {
                 sh '''curl -f http://localhost:8001/health '''
             }
         }
+    }
         post {
             always {
                 sh "docker stop python-flask-test || true"
@@ -24,4 +25,3 @@ pipeline {
             }
         }
     }
-}
