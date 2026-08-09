@@ -1,6 +1,9 @@
 
 pipeline {
     agent any
+    environment {
+    KUBECONFIG = '/home/asus/.kube/config'
+}
     stages {
         stage('Build') {
             steps {
