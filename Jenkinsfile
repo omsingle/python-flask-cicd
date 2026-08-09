@@ -35,6 +35,16 @@ pipeline {
                 sh "docker push yuki982/python-flask-cicd:${BUILD_NUMBER}"
             }
         }
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh """
+                kubectl set image deployment/python-flask-cicd \
+                python-flask-cicd=yuki982/python-flask-cicd:${BUILD_NUMBER}
+                """
+
+                sh 'kubectl rollout status deployment/python-flask-cicd --timeout=120s'
+            }
+        }
     }
         post {
             always {

@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-flask-cicd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: python-flask-cicd
+  template:
+    metadata:
+      labels:
+        app: python-flask-cicd
+    spec:
+      containers:
+        - name: python-flask-cicd
+          image: yuki982/python-flask-cicd:14
+          ports:
+            - containerPort: 8000
