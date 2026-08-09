@@ -17,7 +17,7 @@ pipeline {
                 sh '''curl -f http://localhost:8001/health '''
             }
         }
-        @post {
+        post {
             always {
                 sh "docker stop python-flask-test || true"
                 sh "docker rm python-flask-test || true"
