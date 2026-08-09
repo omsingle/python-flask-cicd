@@ -2,18 +2,52 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: python-flask-cicd
+
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app: python-flask-cicd
+
   template:
     metadata:
       labels:
         app: python-flask-cicd
+
     spec:
       containers:
         - name: python-flask-cicd
-          image: yuki982/python-flask-cicd:14
+          image: yuki982/python-flask-cicd:18
+
           ports:
             - containerPort: 8000
+
+          envFrom:
+            - configMapRef:
+                name: python-flask-config
+            - secretRef:
+                name: python-flask-secret
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+  
