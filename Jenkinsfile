@@ -13,10 +13,10 @@ pipeline {
                 --name python-flask-test \
                 --network jenkins-test \
                 python-flask-cicd:${BUILD_NUMBER} '''
-
-                sh "sleep 10"
-                
-                sh '''curl -f http://python-flask-test:8000/health '''
+                retry(15) {
+                    sleep 2
+                    sh '''curl -f http://python-flask-test:8000/health '''
+                }
             }
         }
     }
