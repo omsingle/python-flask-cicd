@@ -11,10 +11,12 @@ pipeline {
             steps {
                 sh '''docker run -d \
                 --name python-flask-test \
-                -p 8001:8000 \
+                --network jenkins-test \
                 python-flask-cicd:${BUILD_NUMBER} '''
+
                 sh "sleep 10"
-                sh '''curl -f http://localhost:8001/health '''
+                
+                sh '''curl -f http://python-flask-test:8000/health '''
             }
         }
     }
