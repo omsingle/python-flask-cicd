@@ -41,30 +41,17 @@ pipeline {
         stage('Deploy to Kubernetes') {
     steps {
         sh '''
-            export KUBECONFIG=$WORKSPACE/kubeconfig
+            kubectl --kubeconfig=/var/jenkins_home/kubeconfig \
+            --context=minikube \
+            set image deployment/python-flask-cicd \
+            python-flask-cicd=yuki982/python-flask-cicd:${BUILD_NUMBER}
 
-            kubectl config set-cluster minikube \
-                --server=https://192.168.58.2:8443 \
-                --certificate-authority=/home/asus/.minikube/ca.crt
-
-            kubectl config set-credentials minikube \
-                --client-certificate=/home/asus/.minikube/profiles/minikube/client.crt \
-                --client-key=/home/asus/.minikube/profiles/minikube/client.key
-
-            kubectl config set-context minikube \
-                --cluster=minikube \
-                --user=minikube \
-                --namespace=default
-
-            kubectl config use-context minikube
-
-            kubectl set image deployment/python-flask-cicd \
-                python-flask-cicd=yuki982/python-flask-cicd:${BUILD_NUMBER}
-
-            kubectl rollout status deployment/python-flask-cicd --timeout=120s
+            kubectl --kubeconfig=/var/jenkins_home/kubeconfig \
+            --context=minikube \
+            rollout status deployment/python-flask-cicd --timeout=120s
         '''
     }
-}  
+} 
     }
         post {
             always {
