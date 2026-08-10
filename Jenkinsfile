@@ -41,6 +41,11 @@ pipeline {
         stage('Deploy to Kubernetes') {
     steps {
         sh '''
+            export KUBECONFIG=/var/jenkins_home/kubeconfig
+
+            kubectl config current-context
+            kubectl config view --minify | grep server
+
             kubectl set image deployment/python-flask-cicd \
             python-flask-cicd=yuki982/python-flask-cicd:${BUILD_NUMBER}
 
