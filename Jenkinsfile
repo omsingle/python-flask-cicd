@@ -1,9 +1,6 @@
 
 pipeline {
     agent any
-    environment {
-    KUBECONFIG = '/var/jenkins_home/kubeconfig'
-}
     stages {
         stage('Build') {
             steps {
