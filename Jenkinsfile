@@ -41,14 +41,22 @@ pipeline {
         stage('Deploy to Kubernetes') {
     steps {
         sh '''
-            docker exec jenkins env \
-                KUBECONFIG=/var/jenkins_home/kubeconfig \
-                kubectl set image deployment/python-flask-cicd \
+            export KUBECONFIG=$WORKSPACE/kubeconfig
+            rm -f $KUBECONFIG
+
+            kubectl config set-cluster minikube \
+                --server=http://172.31.103.99:8001
+
+            kubectl config set-context minikube \
+                --cluster=minikube \
+                --namespace=default
+
+            kubectl config use-context minikube
+
+            kubectl set image deployment/python-flask-cicd \
                 python-flask-cicd=yuki982/python-flask-cicd:${BUILD_NUMBER}
 
-            docker exec jenkins env \
-                KUBECONFIG=/var/jenkins_home/kubeconfig \
-                kubectl rollout status deployment/python-flask-cicd \
+            kubectl rollout status deployment/python-flask-cicd \
                 --timeout=120s
         '''
     }
