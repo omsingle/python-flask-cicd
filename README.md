@@ -1,27 +1,30 @@
 # FastAPI CI/CD with Docker, Jenkins & Kubernetes
 
-A complete DevOps project demonstrating automated build, testing, containerization, Docker image publishing, and Kubernetes deployment of a FastAPI application.
+A hands-on DevOps project demonstrating automated CI/CD for a FastAPI application using Jenkins, Docker, Docker Hub, and Kubernetes.
 
 ## 🚀 Project Overview
 
-This project implements a CI/CD pipeline where application code is stored in GitHub and Jenkins automatically builds, tests, containerizes, publishes, and deploys the application to Kubernetes.
+The project automates the complete application delivery process:
 
-The project includes:
+```text
+GitHub
+   ↓
+Jenkins
+   ↓
+Docker Build
+   ↓
+Automated Health Test
+   ↓
+Docker Hub
+   ↓
+Kubernetes
+   ↓
+Rolling Deployment
+   ↓
+FastAPI Application
+```
 
-- Docker containerization
-- Jenkins Declarative Pipeline
-- Automated application health testing
-- Docker Hub image publishing
-- Versioned Docker images
-- Kubernetes rolling updates
-- Liveness and readiness probes
-- Resource requests and limits
-- ConfigMaps and Secrets
-- Kubernetes Service
-- Kubernetes Ingress
-- Prometheus monitoring
-- Grafana dashboards
-- CI/CD and Kubernetes troubleshooting
+The Kubernetes environment also includes health checks, resource management, ConfigMaps, Secrets, Ingress, Prometheus, and Grafana.
 
 ## 🏗️ Architecture
 
@@ -35,46 +38,42 @@ The project includes:
                          │   Jenkins    │
                          └──────┬───────┘
                                 │
-                 ┌──────────────┼──────────────┐
-                 ▼              ▼              ▼
-              Build           Test          Push
-                 │              │              │
-                 └──────────────┼──────────────┘
-                                │
-                                ▼
-                         ┌──────────────┐
-                         │  Docker Hub  │
-                         └──────┬───────┘
-                                │
-                                ▼
-                       ┌─────────────────┐
-                       │   Kubernetes    │
-                       │                 │
-                       │   Deployment    │
-                       │       │         │
-                       │       ▼         │
-                       │      Pods       │
-                       │       │         │
-                       │       ▼         │
-                       │    Service      │
-                       │       │         │
-                       │       ▼         │
-                       │    Ingress      │
-                       └───────┬─────────┘
-                               │
-                               ▼
-                         ┌───────────┐
-                         │  FastAPI  │
-                         └───────────┘
+                    ┌───────────┼───────────┐
+                    ▼           ▼           ▼
+                  Build        Test        Push
+                                │           │
+                                └─────┬─────┘
+                                      ▼
+                               ┌──────────────┐
+                               │  Docker Hub  │
+                               └──────┬───────┘
+                                      │
+                                      ▼
+                              ┌───────────────┐
+                              │  Kubernetes   │
+                              │               │
+                              │  Deployment   │
+                              │      ↓        │
+                              │     Pods      │
+                              │      ↓        │
+                              │   Service     │
+                              │      ↓        │
+                              │   Ingress     │
+                              └──────┬────────┘
+                                     │
+                                     ▼
+                               ┌───────────┐
+                               │  FastAPI  │
+                               └───────────┘
 
-                       Monitoring
-                           │
-                ┌──────────┴──────────┐
-                ▼                     ▼
-           Prometheus              Grafana
+                         Monitoring
+                             │
+                    ┌────────┴────────┐
+                    ▼                 ▼
+               Prometheus          Grafana
 ```
 
-## 🛠️ Technologies Used
+## 🛠️ Technologies
 
 - Python
 - FastAPI
@@ -84,13 +83,9 @@ The project includes:
 - Jenkins
 - Docker Hub
 - Kubernetes
-- ConfigMaps
-- Kubernetes Secrets
-- Kubernetes Service
-- Kubernetes Ingress
-- Liveness Probes
-- Readiness Probes
-- Resource Requests & Limits
+- ConfigMaps & Secrets
+- Service & Ingress
+- Liveness & Readiness Probes
 - Prometheus
 - Grafana
 - Linux
@@ -122,57 +117,25 @@ python-flask-cicd/
 
 ## 🔄 CI/CD Pipeline
 
-The project uses a Jenkins Declarative Pipeline to automate the application lifecycle.
+The project uses a Jenkins Declarative Pipeline with the following stages:
 
-### Pipeline Flow
+### Build
 
-```text
-GitHub
-   ↓
-Jenkins
-   ↓
-Docker Build
-   ↓
-Application Test
-   ↓
-Docker Hub Login
-   ↓
-Push Image
-   ↓
-Kubernetes Deployment
-   ↓
-Rolling Update
-   ↓
-Deployment Verification
-```
-
-### 1. Build
-
-Jenkins builds the Docker image using the project's Dockerfile.
+Builds a versioned Docker image using the Jenkins build number.
 
 ```bash
 docker build -t yuki982/python-flask-cicd:${BUILD_NUMBER} .
 ```
 
-The Jenkins `BUILD_NUMBER` is used as the Docker image tag so individual builds can be identified.
-
 Example:
 
 ```text
-yuki982/python-flask-cicd:24
+yuki982/python-flask-cicd:32
 ```
 
-### 2. Test
+### Test
 
-Jenkins starts the newly built Docker image as a temporary container.
-
-The application exposes a health endpoint:
-
-```text
-/health
-```
-
-The pipeline uses `curl` with a retry mechanism to allow the application time to start.
+Runs the newly built container and checks the FastAPI health endpoint.
 
 ```bash
 curl -f http://python-flask-test:8000/health
@@ -186,36 +149,22 @@ Expected response:
 }
 ```
 
-If the health check fails, the pipeline stops before the image is pushed or deployed.
+The pipeline uses retries to allow the application to start before testing.
 
-### 3. Docker Hub Login
+### Docker Hub
 
-Docker Hub credentials are stored securely in Jenkins Credentials.
+Jenkins securely retrieves Docker Hub credentials from Jenkins Credentials, logs in, and pushes the tested image.
 
-The credentials are injected into the pipeline only when required and are not hardcoded into the Jenkinsfile.
+### Kubernetes Deployment
 
-### 4. Push
-
-After successful testing, Jenkins pushes the versioned Docker image to Docker Hub.
-
-Example:
-
-```text
-yuki982/python-flask-cicd:24
-```
-
-### 5. Deploy to Kubernetes
-
-Jenkins updates the Kubernetes Deployment with the newly built image.
+Jenkins updates the Kubernetes Deployment with the new image:
 
 ```bash
 kubectl set image deployment/python-flask-cicd \
 python-flask-cicd=yuki982/python-flask-cicd:${BUILD_NUMBER}
 ```
 
-Kubernetes then performs a rolling update.
-
-The pipeline waits for the rollout to complete:
+Kubernetes performs a rolling update and Jenkins waits for the rollout to complete:
 
 ```bash
 kubectl rollout status deployment/python-flask-cicd
@@ -223,309 +172,167 @@ kubectl rollout status deployment/python-flask-cicd
 
 ## 🐳 Docker
 
-The FastAPI application is containerized using Docker.
-
-### Dockerfile
+The application is containerized using `python:3.13-slim`.
 
 The Dockerfile:
 
-- Uses `python:3.13-slim` as the base image
-- Creates `/app` as the working directory
-- Copies `requirements.txt`
-- Installs Python dependencies
+- Installs dependencies from `requirements.txt`
 - Copies the FastAPI application
 - Exposes port `8000`
-- Starts the application using Uvicorn
+- Runs the application using Uvicorn
 
-### Build the Image
+Run locally:
 
 ```bash
 docker build -t python-flask-cicd .
-```
-
-### Run the Container
-
-```bash
 docker run -p 8000:8000 python-flask-cicd
 ```
 
-### Test the Application
+Test:
 
 ```bash
 curl http://localhost:8000/health
 ```
 
-Expected response:
-
-```json
-{
-  "status": "healthy"
-}
-```
-
-The application root endpoint is:
-
-```text
-http://localhost:8000/
-```
-
 ## ☸️ Kubernetes
 
-The FastAPI application is deployed to Kubernetes using a Deployment.
+The application is deployed using a Kubernetes Deployment.
 
-The Kubernetes Deployment provides:
+Implemented Kubernetes features:
 
-- Pod management
-- Self-healing
 - Rolling updates
-- Health checks
-- Resource management
+- Self-healing
+- Liveness probes
+- Readiness probes
+- CPU and memory requests/limits
+- ConfigMaps
+- Secrets
+- NodePort Service
+- NGINX Ingress
 
-### Check the Deployment
-
-```bash
-kubectl get deployment python-flask-cicd
-```
-
-### Check Pods
+Useful commands:
 
 ```bash
 kubectl get pods
+kubectl get deployment
+kubectl get service
+kubectl describe pod <pod-name>
+kubectl logs <pod-name>
 ```
-
-### Check Rollout Status
-
-```bash
-kubectl rollout status deployment/python-flask-cicd
-```
-
-### Check Deployment Image
-
-```bash
-kubectl get deployment python-flask-cicd \
--o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
-```
-
-## ❤️ Health Checks
-
-The Kubernetes Deployment uses both liveness and readiness probes.
-
-### Liveness Probe
-
-The liveness probe checks whether the application is functioning.
-
-```text
-/health
-```
-
-If the liveness probe repeatedly fails, Kubernetes can restart the container.
-
-### Readiness Probe
-
-The readiness probe checks whether the application is ready to receive traffic.
-
-If the readiness probe fails, Kubernetes removes the Pod from Service traffic until it becomes ready.
-
-## 📊 Resource Management
-
-The Kubernetes Deployment defines CPU and memory requests and limits.
-
-```yaml
-resources:
-  requests:
-    cpu: "100m"
-    memory: "128Mi"
-
-  limits:
-    cpu: "500m"
-    memory: "256Mi"
-```
-
-Requests help Kubernetes schedule Pods, while limits define the maximum resources available to the container.
-
-## ⚙️ ConfigMap
-
-The project uses a ConfigMap for non-sensitive application configuration.
-
-Example:
-
-```yaml
-APP_ENV: "production"
-APP_NAME: "python-flask-cicd"
-```
-
-This separates configuration from the application container image.
-
-## 🔐 Kubernetes Secrets
-
-The Deployment is configured to consume sensitive configuration through a Kubernetes Secret.
-
-```yaml
-envFrom:
-  - secretRef:
-      name: python-flask-secret
-```
-
-Sensitive credentials should not be hardcoded into application manifests or committed to GitHub.
-
-The actual Secret should be created separately in the Kubernetes cluster.
-
-## 🌐 Kubernetes Service
-
-A Kubernetes Service provides stable networking for the application and routes traffic to the appropriate Pods.
-
-The FastAPI application listens on port:
-
-```text
-8000
-```
-
-The Service uses port `8000` and forwards traffic to the application's port `8000`.
-
-The Service type used in this project is:
-
-```text
-NodePort
-```
-
-## 🌍 Ingress
-
-The project uses an NGINX Ingress to route HTTP traffic to the FastAPI Service.
-
-Configured hostname:
-
-```text
-python-flask.local
-```
-
-Ingress provides an HTTP entry point into the Kubernetes application and routes requests to the Kubernetes Service.
 
 ## 📈 Monitoring
 
-The Kubernetes environment includes Prometheus and Grafana for monitoring.
+Prometheus is used to collect Kubernetes/application metrics and store them as time-series data.
 
-### Prometheus
+Grafana is connected to Prometheus to visualize metrics through dashboards.
 
-Prometheus collects and stores metrics as time-series data.
-
-Metrics can be used to monitor:
+The dashboard includes monitoring such as:
 
 - CPU usage
 - Memory usage
-- Request rate
-- Error rate
-- Application performance
-- Kubernetes resources
+- Pod status
+- Kubernetes metrics
 
-### Grafana
+## 📸 Project Screenshots
 
-Grafana connects to Prometheus and visualizes the collected metrics through dashboards.
+### Jenkins CI/CD Pipeline
 
-This provides a visual way to monitor application and infrastructure health.
+![Jenkins Pipeline](docs/jenkins-pipeline.png)
 
-## 🧪 Troubleshooting
+### Kubernetes Deployment
 
-### Kubernetes
+![Kubernetes Deployment](docs/kubernetes-deployment.png)
+
+### Docker Hub
+
+![Docker Hub Images](docs/dockerhub-images.png)
+
+### Grafana Monitoring
+
+![Grafana Dashboard](docs/grafana-dashboard.png)
+
+## ▶️ How to Run
+
+### Run FastAPI Locally
+
+Clone the repository:
 
 ```bash
-kubectl get pods
-kubectl get deployments
-kubectl get services
-kubectl describe pod <pod-name>
-kubectl logs <pod-name>
-kubectl get events
+git clone https://github.com/omsingle/python-flask-cicd.git
+cd python-flask-cicd
 ```
 
-### Docker
+Install dependencies:
 
 ```bash
-docker ps
-docker images
-docker logs <container>
-docker exec -it <container> sh
+pip install -r app/requirements.txt
 ```
 
-### Deployment
+Start the application:
 
 ```bash
-kubectl rollout status deployment/python-flask-cicd
-kubectl rollout history deployment/python-flask-cicd
+uvicorn app.app:app --host 0.0.0.0 --port 8000
 ```
 
-### Common Kubernetes Problems
-
-#### CrashLoopBackOff
-
-Check the application logs:
+Test:
 
 ```bash
-kubectl logs <pod-name>
+curl http://localhost:8000/health
 ```
 
-For logs from the previous container:
+### Run with Docker
 
 ```bash
-kubectl logs <pod-name> --previous
+docker build -t python-flask-cicd .
+docker run -p 8000:8000 python-flask-cicd
 ```
 
-#### ImagePullBackOff
-
-Check Pod events:
+### Deploy to Kubernetes
 
 ```bash
-kubectl describe pod <pod-name>
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml
 ```
 
 Verify:
 
-- Image name
-- Image tag
-- Docker Hub repository
-- Registry authentication
-
-#### Pod Not Ready
-
-Check:
-
 ```bash
-kubectl describe pod <pod-name>
+kubectl get pods
+kubectl get deployment
+kubectl get service
+kubectl get ingress
 ```
 
-Look at the readiness probe and Events section.
+> The Kubernetes Deployment references a Secret named `python-flask-secret`. Create the required Secret separately and never commit real credentials to GitHub.
 
 ## 🎯 What I Learned
 
 Through this project I gained practical experience with:
 
-- Building CI/CD pipelines
-- FastAPI application containerization
-- Docker image versioning
-- Automated health testing
+- CI/CD pipeline automation
 - Jenkins Declarative Pipelines
+- Docker containerization
+- Docker image versioning
+- Automated application testing
 - Secure Jenkins credentials
-- Docker Hub image publishing
+- Docker Hub
 - Kubernetes deployments
 - Rolling updates
-- Kubernetes health checks
-- Resource requests and limits
-- ConfigMaps and Secrets
+- Health probes
+- ConfigMaps & Secrets
 - Kubernetes networking
-- Prometheus monitoring
-- Grafana dashboards
-- CI/CD troubleshooting
-- Kubernetes troubleshooting
+- Prometheus & Grafana
+- CI/CD and Kubernetes troubleshooting
 
 ## 🚀 Future Improvements
 
-Potential future improvements include:
-
 - Helm chart integration
 - Horizontal Pod Autoscaling
-- Infrastructure provisioning using Terraform
+- Terraform infrastructure
 - AWS cloud deployment
 - Centralized logging
-- Automated GitHub webhook triggers
-- Production Kubernetes cluster deployment
 
 ## 👨‍💻 Author
 
