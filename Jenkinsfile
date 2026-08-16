@@ -12,13 +12,15 @@ pipeline {
                 sh '''docker run -d \
                 --name python-flask-test \
                 --network jenkins-test \
+                -p 8000:8000 \
                 yuki982/python-flask-cicd:${BUILD_NUMBER} '''
+
                 retry(15) {
                     sleep 2
-                    sh '''curl -f http://python-flask-test:8000/health '''
-                }
-            }
+                    sh '''curl -f http://localhost:8000/health '''
         }
+    }
+}
         stage('docker login') {
             steps {
                 withCredentials([usernamePassword(
